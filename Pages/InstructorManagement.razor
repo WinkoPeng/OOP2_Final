@@ -1,0 +1,372 @@
+﻿@page "/instructormanagement"
+@using learning_management_sys.Data
+@using MySqlConnector
+<h3>Instructor Management</h3>
+
+<style>
+    #findreservationbtn {
+        width: 300px;
+    }
+
+    #savebtn {
+        width: 250px;
+    }
+
+    .centerbtn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px;
+    }
+
+    button {
+        font-size: 15px;
+        background-color: royalblue;
+        color: white;
+    }
+
+    .button:hover {
+        background-color: blue;
+    }
+
+    label {
+        font-size: 15px;
+    }
+
+    input {
+        font-size: 15px;
+    }
+
+    .longinput {
+        padding-right: 83%;
+    }
+
+    p {
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .labelrow {
+        display: inline-block;
+        margin-right: 20%;
+    }
+
+    .inputrow {
+        display: inline-block;
+        margin-right: 1%;
+        width: 250px;
+    }
+
+    h5 {
+        text-align: center;
+        margin-bottom: 10px;
+        margin-top: 20px;
+    }
+</style>
+
+<div>
+    <label class="labelrow" for="InstructorID">Instructor ID:</label>
+    <label class="labelrow" for="InstructorName">Instructor Name:</label>
+    <label class="labelrow" for="Semester">Semester:</label>
+</div>
+
+<div>
+    <input placeholder="Any" type="text" class="inputrow" name="InstructorID" id="InstructorID" @bind="searchID">
+    <input placeholder="Any" type="text" class="inputrow" name="InstructorName" id="InstructorName" @bind="searchName">
+    <input placeholder="Any" type="text" class="inputrow" name="Semester" id="Semester" @bind="searchSemester">
+    <button class="button inputrow" id="findinstructorbtn" @onclick="FindInstructor">Find Instructor</button>
+</div>
+
+<h5>Selection</h5>
+<select name="instructorSelection" @onchange="OnInstructorSelectionChange">
+    @foreach (var instructor in matchInstructors.Any() ? matchInstructors : allInstructors)
+    {
+        <option value="@instructor.InstructorID - @instructor.InstructorName - @instructor.PhoneNumber - @instructor.Email - @instructor.Semester - @instructor.IsFullTime - @instructor.HoursPerMonth - @instructor.HourWage - @instructor.Salary - @instructor.CourseName">@instructor.InstructorID - @instructor.InstructorName - @instructor.Semester</option>
+    }
+</select>
+
+<h5>Management</h5>
+
+<label for="InstructorID">Instructor ID:</label>
+<br />
+<input placeholder="Instructor ID" class="longinput" type="text" name="InstructorID" id="InstructorID" @bind="selectedID">
+<br />
+<br />
+
+<label for="InstructorName">Instructor Name:</label>
+<br />
+<input placeholder="Instructor Name" class="longinput" type="text" name="InstructorName" id="InstructorName" @bind="selectedName">
+<br />
+<br />
+
+<label for="PhoneNumber">Phone Number:</label>
+<br />
+<input placeholder="Phone Number" class="longinput" type="text" name="PhoneNumber" id="PhoneNumber" @bind="selectedPhoneNumber">
+<br />
+<br />
+
+<label for="Email">Email:</label>
+<br />
+<input placeholder="Email" class="longinput" type="text" name="Email" id="Email" @bind="selectedEmail">
+<br />
+<br />
+
+<label for="Semester">Semester:</label>
+<br />
+<input placeholder="Semester" class="longinput" type="text" name="Semester" id="Semester" @bind="selectedSemester">
+<br />
+<br />
+
+<label for="IsFulltime">Is Full Time:</label>
+<br />
+<input placeholder="Is Full Time" class="longinput" type="text" name="IsFulltime" id="IsFulltime" @bind="selectedIsFulltime">
+<br />
+<br />
+
+<label for="HoursPerMonth">Hours Per Month:</label>
+<br />
+<input placeholder="Hours Per Month" class="longinput" type="text" name="HoursPerMonth" id="HoursPerMonth" @bind="selectedHoursPerMonth">
+<br />
+<br />
+
+<label for="HourlyWage">Hourly Wage:</label>
+<br />
+<input placeholder="Hourly Wage" class="longinput" type="text" name="HourlyWage" id="HourlyWage" @bind="selectedHourlyWage">
+<br />
+<br />
+
+<label for="Salary">Salary:</label>
+<br />
+<input placeholder="Salary" class="longinput" type="text" name="Salary" id="Salary" @bind="selectedSalary">
+<br />
+<br />
+
+<label for="Courses">Courses:</label>
+<br />
+<select name="Courses" id="Courses" @bind="selectedCourseName">
+    @foreach (var course in courses)
+    {
+        <option value="@course">@course</option>
+    }
+</select>
+<br />
+<br />
+
+<label for="Students">Students:</label>
+<br />
+<select name="Students" id="Students" @bind="selectedStudent">
+    @foreach (var student in students)
+    {
+        <option value="@student">@student</option>
+    }
+</select>
+<br />
+<br />
+
+<div class="centerbtn">
+    <button class="button" id="saveinstructorbtn" @onclick="EditInstructor">Save Instructor Information</button> <br />
+</div>
+
+<div class="centerbtn">
+    <button class="button" id="createnewinstructorbtn" @onclick="CreateNewInstructor">Create A New Instructor</button> <br />
+</div>
+
+<div class="centerbtn">
+    <button class="button" id="deleteinstructorbtn" @onclick="DeleteInstructor">Delete This Instructor</button> <br />
+</div>
+
+@code {
+    private List<Instructor> allInstructors = Instructor.Connect();
+    private List<Instructor> matchInstructors = new List<Instructor>();
+    private List<string> students = new List<string>();  // Add this list for students
+    private List<string> courses = new List<string>();  // Add this list for courses
+    private string selectedInstructor;
+    private string selectedID;
+    private string selectedName;
+    private string selectedPhoneNumber;
+    private string selectedEmail;
+    private string selectedSemester;
+    private string selectedIsFulltime;
+    private string selectedHoursPerMonth;
+    private string selectedHourlyWage;
+    private string selectedSalary;
+    private string selectedCourseName;
+    private string selectedStudent;
+    private string searchID;
+    private string searchName;
+    private string searchSemester;
+
+
+    private void OnInstructorSelectionChange(ChangeEventArgs e)
+    {
+        selectedInstructor = e.Value.ToString();
+        string[] values = selectedInstructor.Split(new string[] { " - " }, StringSplitOptions.None);
+        if (values.Length >= 10)
+        {
+            selectedID = values[0];
+            selectedName = values[1];
+            selectedPhoneNumber = values[2];
+            selectedEmail = values[3];
+            selectedSemester = values[4];
+            selectedIsFulltime = values[5];
+            selectedHoursPerMonth = values[6];
+            selectedHourlyWage = values[7];
+            selectedSalary = values[8];
+            selectedCourseName = values[9];
+            // Populate other fields as needed
+            FindCourses();
+            FindStudents();
+        }
+    }
+
+    private void CreateNewInstructor()
+    {
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string addSql = $"INSERT INTO `schoolmanagement`.`instructortable` " +
+                            $"(`InstructorID`, `InstructorName`, `PhoneNumber`, `Email`, `Semester`, `IsFullTime`, `HoursPerMonth`, `HourWage`, `Salary`, `CourseName`) " +
+                            $"VALUES ('{selectedID}', '{selectedName}', '{selectedPhoneNumber}', '{selectedEmail}', '{selectedSemester}', '{selectedIsFulltime}', " +
+                            $"'{selectedHoursPerMonth}', '{selectedHourlyWage}', '{selectedSalary}', '{selectedCourseName}');";
+            MySqlCommand command = new MySqlCommand(addSql, connection);
+            command.ExecuteNonQuery();
+        }
+    }
+
+    private void EditInstructor()
+    {
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string editSql = $"UPDATE `schoolmanagement`.`instructortable` SET " +
+                             $"`InstructorName` = '{selectedName}', " +
+                             $"`PhoneNumber` = '{selectedPhoneNumber}', " +
+                             $"`Email` = '{selectedEmail}', " +
+                             $"`Semester` = '{selectedSemester}', " +
+                             $"`IsFullTime` = '{selectedIsFulltime}', " +
+                             $"`HoursPerMonth` = '{selectedHoursPerMonth}', " +
+                             $"`HourWage` = '{selectedHourlyWage}', " +
+                             $"`Salary` = '{selectedSalary}', " +
+                             $"`CourseName` = '{selectedCourseName}' " +
+                             $"WHERE `InstructorID` = '{selectedID}';";
+            MySqlCommand command = new MySqlCommand(editSql, connection);
+            command.ExecuteNonQuery();
+        }
+    }
+
+    private void DeleteInstructor()
+    {
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string deleteSql = $"DELETE FROM `schoolmanagement`.`instructortable` WHERE `InstructorID` = '{selectedID}';";
+            MySqlCommand command = new MySqlCommand(deleteSql, connection);
+            command.ExecuteNonQuery();
+        }
+    }
+
+    private void FindInstructor()
+    {
+        matchInstructors.Clear();
+
+        foreach (var instructor in allInstructors)
+        {
+            bool match = true;
+
+            if (!string.IsNullOrEmpty(searchID) && !instructor.InstructorID.Contains(searchID))
+            {
+                match = false;
+            }
+
+            if (!string.IsNullOrEmpty(searchName) && !instructor.InstructorName.Contains(searchName, StringComparison.OrdinalIgnoreCase))
+            {
+                match = false;
+            }
+
+            if (!string.IsNullOrEmpty(searchSemester) && !instructor.Semester.Contains(searchSemester, StringComparison.OrdinalIgnoreCase))
+            {
+                match = false;
+            }
+
+            if (match)
+            {
+                matchInstructors.Add(instructor);
+            }
+        }
+    }
+
+    private void FindCourses()
+    {
+        courses.Clear();
+
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string findCoursesSql = $"SELECT ct.CourseName FROM schoolmanagement.coursetable ct JOIN schoolmanagement.instructortable it ON ct.CourseName = it.CourseName WHERE it.InstructorID = '{selectedID}';";
+            MySqlCommand command = new MySqlCommand(findCoursesSql, connection);
+            MySqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                courses.Add(reader.GetString("courseName"));
+            }
+        }
+    }
+
+    private void FindStudents()
+    {
+        students.Clear();
+
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string findStudentsSql = $"SELECT st.studentname FROM schoolmanagement.studenttable st JOIN schoolmanagement.coursetable ct ON st.CourseName = ct.CourseName JOIN schoolmanagement.instructortable it ON ct.CourseName = it.CourseName WHERE it.InstructorID = '{selectedID}';";
+            MySqlCommand command = new MySqlCommand(findStudentsSql, connection);
+            MySqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                students.Add(reader.GetString("studentname"));
+            }
+        }
+    }
+
+}

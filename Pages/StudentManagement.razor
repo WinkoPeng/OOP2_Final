@@ -1,0 +1,365 @@
+﻿@page "/studentmanagement"
+@using learning_management_sys.Data
+@using MySqlConnector
+<h3>Student Management</h3>
+
+<style>
+    #findreservationbtn {
+        width: 300px;
+    }
+
+    #savebtn {
+        width: 250px;
+    }
+
+    .centerbtn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px;
+    }
+
+    button {
+        font-size: 15px;
+        background-color: royalblue;
+        color: white;
+    }
+
+    .button:hover {
+        background-color: blue;
+    }
+
+    label {
+        font-size: 15px;
+    }
+
+    input {
+        font-size: 15px;
+    }
+
+    .longinput {
+        padding-right: 83%;
+    }
+
+    p {
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .labelrow {
+        display: inline-block;
+        margin-right: 20%;
+    }
+
+    .inputrow {
+        display: inline-block;
+        margin-right: 1%;
+        width:250px;
+    }
+
+    h5 {
+        text-align: center;
+        margin-bottom: 10px;
+        margin-top: 20px;
+    }
+</style>
+
+
+
+<h5>Find Student</h5>
+
+<div>
+    <label class="labelrow" for="StudentID">Student ID:</label>
+    <label class="labelrow" for="StudentName">Student Name:</label>
+    <label class="labelrow" for="Semester">Semester:</label>
+</div>
+
+<div>
+    <input placeholder="Any" type="text" class="inputrow" name="StudentID" id="StudentID" @bind="searchID">
+    <input placeholder="Any" type="text" class="inputrow" name="StudentName" id="StudentName" @bind="searchName">
+    <input placeholder="Any" type="text" class="inputrow" name="Semester" id="Semester" @bind="searchSemester">
+    <button class="button inputrow" id="findstudentbtn" @onclick="FindStudent">Find Student</button>
+</div>
+
+<h5>Selection</h5>
+<select @onchange="OnStudentSelectionChange">
+    @foreach (var student in matchStudents.Any() ? matchStudents : allStudents)
+    {
+        <option value="@student.StudentID - @student.StudentName - @student.PhoneNumber - @student.Email - @student.Semester - @student.GPA - @student.IsGraduated - @student.CourseName - @student.InstructorName">@student.StudentID - @student.StudentName - @student.Semester</option>
+    }
+</select>
+
+<h5>Management</h5>
+
+<label for="StudentID">Student ID:</label>
+<br />
+<input placeholder="Student ID" class="longinput" type="text" name="StudentID" id="StudentID" @bind="selectedID">
+<br />
+<br />
+
+<label for="StudentName">Student Name:</label>
+<br />
+<input placeholder="Student Name" class="longinput" type="text" name="StudentName" id="StudentName" @bind="selectedName">
+<br />
+<br />
+
+<label for="PhoneNumber">Phone Number:</label>
+<br />
+<input placeholder="Phone Number" class="longinput" type="text" name="PhoneNumber" id="PhoneNumber" @bind="selectedPhoneNumber">
+<br />
+<br />
+
+<label for="Email">Email:</label>
+<br />
+<input placeholder="Email" class="longinput" type="text" name="Email" id="Email" @bind="selectedEmail">
+<br />
+<br />
+
+<label for="Semester">Semester:</label>
+<br />
+<input placeholder="Semester" class="longinput" type="text" name="Semester" id="Semester" @bind="selectedSemester">
+<br />
+<br />
+
+<label for="GPA">GPA:</label>
+<br />
+<input placeholder="GPA" class="longinput" type="text" name="GPA" id="GPA" @bind="selectedGPA">
+<br />
+<br />
+
+<label for="IsGraduated">Is Graduated:</label>
+<br />
+<input placeholder="Is Graduated" class="longinput" type="text" name="IsGraduated" id="IsGraduated" @bind="selectedIsGraduated">
+<br />
+<br />
+
+<label for="CourseName">Course Name:</label>
+<br />
+<input placeholder="Is Graduated" class="longinput" type="text" name="CourseName" id="CourseName" @bind="selectedCourseName">
+<br />
+<br />
+
+<label for="Courses">Courses:</label>
+<br />
+<select name="Courses" id="Courses" @bind="selectedCourseName">
+    @foreach (var course in courses)
+    {
+        <option value="@course">@course</option>
+    }
+</select>
+<br />
+<br />
+
+<label for="Instructors">Instructors:</label>
+<br />
+<select name="Instructors" id="Instructors" @bind="selectedInstructorName">
+    @foreach (var instructor in instructors)
+    {
+        <option value="@instructor">@instructor</option>
+    }
+</select>
+<br />
+<br />
+
+<div class="centerbtn">
+    <button class="button" id="savebtn" @onclick="EditStudent">Save Student Information</button> <br />
+</div>
+
+<div class="centerbtn">
+    <button class="button" id="createbtn" @onclick="CreateNewStudent">Create A New Student</button> <br />
+</div>
+
+<div class="centerbtn">
+    <button class="button" id="deletebtn" @onclick="DeleteStudent">Delete This Student</button> <br />
+</div>
+
+@code {
+    private List<Student> allStudents = Student.Connect();
+    private List<Student> matchStudents = new List<Student>();
+    private List<string> courses = new List<string>();  
+    private List<string> instructors = new List<string>();  
+    private string selectedStudent;
+    private string selectedID;
+    private string selectedName;
+    private string selectedPhoneNumber;
+    private string selectedEmail;
+    private string selectedSemester;
+    private string selectedGPA;
+    private string selectedIsGraduated;
+    private string selectedCourseName;
+    private string selectedInstructorName;
+    private string searchID;
+    private string searchName;
+    private string searchSemester;
+
+
+    private void OnStudentSelectionChange(ChangeEventArgs e)
+    {
+        selectedStudent = e.Value.ToString();
+        string[] values = selectedStudent.Split(new string[] { " - " }, StringSplitOptions.None);
+        if (values.Length >= 9)
+        {
+            selectedID = values[0];
+            selectedName = values[1];
+            selectedPhoneNumber = values[2];
+            selectedEmail = values[3];
+            selectedSemester = values[4];
+            selectedGPA = values[5];
+            selectedIsGraduated = values[6];
+            selectedCourseName = values[7];
+            selectedInstructorName = values[8];
+            // Populate other fields as needed
+            FindCourses();
+            FindInstructors();
+        }
+    }
+
+    private void CreateNewStudent()
+    {
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string addSql = $"INSERT INTO `schoolmanagement`.`studenttable` " +
+                            $"(`StudentID`, `StudentName`, `PhoneNumber`, `Email`, `Semester`, `GPA`, `IsGraduated`, `CourseName`, `InstructorName`) " +
+                            $"VALUES ('{selectedID}', '{selectedName}', '{selectedPhoneNumber}', '{selectedEmail}', '{selectedSemester}', '{selectedGPA}', " +
+                            $"'{selectedIsGraduated}', '{selectedCourseName}', '{selectedInstructorName}');";
+            MySqlCommand command = new MySqlCommand(addSql, connection);
+            command.ExecuteNonQuery();
+        }
+    }
+
+    private void EditStudent()
+    {
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string editSql = $"UPDATE `schoolmanagement`.`studenttable` SET " +
+                             $"`StudentName` = '{selectedName}', " +
+                             $"`PhoneNumber` = '{selectedPhoneNumber}', " +
+                             $"`Email` = '{selectedEmail}', " +
+                             $"`Semester` = '{selectedSemester}', " +
+                             $"`GPA` = '{selectedGPA}', " +
+                             $"`IsGraduated` = '{selectedIsGraduated}', " +
+                             $"`CourseName` = '{selectedCourseName}', " +
+                             $"`InstructorName` = '{selectedInstructorName}' " +
+                             $"WHERE `StudentID` = '{selectedID}';";
+            MySqlCommand command = new MySqlCommand(editSql, connection);
+            command.ExecuteNonQuery();
+        }
+    }
+
+    private void DeleteStudent()
+    {
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string deleteSql = $"DELETE FROM `schoolmanagement`.`studenttable` WHERE `StudentID` = '{selectedID}';";
+            MySqlCommand command = new MySqlCommand(deleteSql, connection);
+            command.ExecuteNonQuery();
+        }
+    }
+
+    private void FindStudent()
+    {
+        matchStudents.Clear();
+
+        foreach (var student in allStudents)
+        {
+            bool match = true;
+
+            if (!string.IsNullOrEmpty(searchID) && !student.StudentID.Contains(searchID))
+            {
+                match = false;
+            }
+
+            if (!string.IsNullOrEmpty(searchName) && !student.StudentName.Contains(searchName, StringComparison.OrdinalIgnoreCase))
+            {
+                match = false;
+            }
+
+            if (!string.IsNullOrEmpty(searchSemester) && !student.Semester.Contains(searchSemester, StringComparison.OrdinalIgnoreCase))
+            {
+                match = false;
+            }
+
+            if (match)
+            {
+                matchStudents.Add(student);
+            }
+        }
+    }
+
+    private void FindCourses()
+    {
+        courses.Clear();
+
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string findCoursesSql = $"SELECT DISTINCT CourseName FROM schoolmanagement.studenttable WHERE Semester = '{selectedSemester}';";
+            MySqlCommand command = new MySqlCommand(findCoursesSql, connection);
+            MySqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                courses.Add(reader.GetString("CourseName"));
+            }
+        }
+    }
+
+    private void FindInstructors()
+    {
+        instructors.Clear();
+
+        var builder = new MySqlConnectionStringBuilder()
+            {
+                Server = "localhost",
+                Database = "schoolmanagement",
+                UserID = "root",
+                Password = "Congyan20030610*",
+            };
+
+        using (var connection = new MySqlConnection(builder.ConnectionString))
+        {
+            connection.Open();
+            string findInstructorsSql = $"SELECT DISTINCT InstructorName FROM schoolmanagement.studenttable WHERE Semester = '{selectedSemester}';";
+            MySqlCommand command = new MySqlCommand(findInstructorsSql, connection);
+            MySqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                instructors.Add(reader.GetString("InstructorName"));
+            }
+        }
+    }
+}
